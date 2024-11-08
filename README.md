@@ -1,13 +1,16 @@
 # CLIENT
 
 ## PURPOSE
-HTTP/1.0 client, only support GET method, fetch the data from a url, can optionally local saved.(Doesn't support get query, nor doing url validation)
+HTTP/1.0 client, only support GET method, fetch the data from a url, can optionally local saved.(Doesn't support get query, and support basic url format validation)
 
 ## USAGE
 
 ```Makefile
 # build
 make client
+
+# test
+make test
 
 # run (after build)
 # second argument could be 'y' | '1' | 'n' | '0'
