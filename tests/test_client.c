@@ -119,7 +119,7 @@ void test_validate_input_incorrect_3(void)
 
 void test_parse_url_correct_1(void)
 {
-        struct UrlInfo ui;
+        struct UrlInfo ui = {0};
         const char *url = "http://localhost/foo/bar";
         int retval = -1;
 
@@ -133,7 +133,7 @@ void test_parse_url_correct_1(void)
 
 void test_parse_url_correct_2(void)
 {
-        struct UrlInfo ui;
+        struct UrlInfo ui = {0};
         const char *url = "http://127.0.0.1/something.txt";
         int retval = -1;
 
@@ -148,7 +148,7 @@ void test_parse_url_correct_2(void)
 /* NO HOST */
 void test_parse_url_incorrect_1(void)
 {
-        struct UrlInfo ui;
+        struct UrlInfo ui = {0};
         const char *url = "http:///something.txt";
         int retval = 1;
 
@@ -160,13 +160,26 @@ void test_parse_url_incorrect_1(void)
 /* NO PATH */
 void test_parse_url_incorrect_2(void)
 {
-        struct UrlInfo ui;
+        struct UrlInfo ui = {0};
         const char *url = "http://127.0.0.1/";
         int retval = 1;
 
         retval = parse_url(url, &ui);
 
         TEST_ASSERT_EQUAL_INT(FAIL, retval);
+}
+
+void test_construct_request_message(void)
+{
+    const char *uri = "foo/bar/test.txt";
+    char req_msg[REQUEST_MESSAGE_MAX_SIZE] = {0};
+    const char *expected =
+        "GET /foo/bar/test.txt HTTP/1.0\n" // Initial line
+        "User-Agent: MyHttpClient/1.0\n"   // Fixed headers for this toy program
+        "\r\n";                            // Blank line(CRLF)
+
+    construct_request_message(req_msg, uri);
+    TEST_ASSERT_EQUAL_STRING(expected, req_msg);
 }
 
 
@@ -188,6 +201,8 @@ int main(void)
 
         RUN_TEST(test_parse_url_incorrect_1);
         RUN_TEST(test_parse_url_incorrect_2);
+
+        RUN_TEST(test_construct_request_message);
 
         UNITY_END();
 
