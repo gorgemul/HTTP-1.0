@@ -14,7 +14,7 @@ make test
 
 # run (after build)
 # second argument could be 'y' | '1' | 'n' | '0'
-# 'y' or '1' for locally saved, 'n' or '0' print to terminal
+# 'y' or '1' for locally saved, 'n' or '0' for printing the response body to terminal
 ./bin/httpclient http://x.x.x.x/Foo/bar y
 
 # clean
