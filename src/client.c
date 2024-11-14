@@ -82,6 +82,7 @@ void construct_request_message(char *req_msg, const char *uri)
         strcat(req_msg, "\r\n");
 }
 
+/* Helper functions */
 int is_valid_status_code(const char str_code[])
 {
         int code = 0;
@@ -237,7 +238,7 @@ int scan_initial_line(struct HttpResponse *hr, char *initial_line)
 }
 
 /* >=0 represents advance distance, -1 represents last line */
-int scan_content_line(char content[], char *line)
+int scan_one_line_content(char content[], char *line)
 {
         char *from = line;
         char *to = strchr(line, '\n');
@@ -255,7 +256,7 @@ int scan_content_line(char content[], char *line)
         }
 
         int length = (to - from) + 1;
-        char *buf = malloc(sizeof(*buf) * length+1);
+        char *buf = malloc(sizeof(*buf) * (length+1));
 
         memcpy(buf, line, length);
         buf[length] = '\0';
@@ -267,17 +268,16 @@ int scan_content_line(char content[], char *line)
         return length;
 }
 
-void scan_content(char *buf, char *content)
+void scan_multiple_lines_content(char *buf, char *content)
 {
         int advance_distance = 0;
         char *line_index = content;
 
         do {
-                advance_distance = scan_content_line(buf, line_index);
+                advance_distance = scan_one_line_content(buf, line_index);
                 line_index += advance_distance;
         } while (advance_distance != -1);
 }
-
 /* Helper functions */
 
 int parse_response_message(struct HttpResponse *hr, char *res)
@@ -306,7 +306,7 @@ int parse_response_message(struct HttpResponse *hr, char *res)
                         continue;
                 }
 
-                scan_content(hr->content, token);
+                scan_multiple_lines_content(hr->content, token);
                 token = strtok(NULL, "\0");
 
         } while (token != NULL);

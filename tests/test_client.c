@@ -12,7 +12,8 @@ void tearDown(void)
 {
 }
 
-void test_validate_input_success_1(void)
+
+void g1_sucess_valid_option_y(void)
 {
         int argc = 3;
         const char *argv[] = {
@@ -27,7 +28,7 @@ void test_validate_input_success_1(void)
         TEST_ASSERT_EQUAL_INT(1, is_saved);
 }
 
-void test_validate_input_sucess_2(void)
+void g1_sucess_valid_option_1(void)
 {
         int argc = 3;
         const char *argv[] = {
@@ -42,7 +43,7 @@ void test_validate_input_sucess_2(void)
         TEST_ASSERT_EQUAL_INT(1, is_saved);
 }
 
-void test_validate_input_sucess_3(void)
+void g1_sucess_valid_option_0(void)
 {
         int argc = 3;
         const char *argv[] = {
@@ -57,7 +58,7 @@ void test_validate_input_sucess_3(void)
         TEST_ASSERT_EQUAL_INT(0, is_saved);
 }
 
-void test_validate_input_sucess_4(void)
+void g1_success_valid_option_n(void)
 {
         int argc = 3;
         const char *argv[] = {
@@ -72,7 +73,7 @@ void test_validate_input_sucess_4(void)
         TEST_ASSERT_EQUAL_INT(0, is_saved);
 }
 
-void test_validate_input_error_1(void)
+void g1_error_no_option_provided(void)
 {
         int argc = 2;
         const char *argv[] = {
@@ -87,7 +88,7 @@ void test_validate_input_error_1(void)
 }
 
 
-void test_validate_input_error_2(void)
+void g1_error_trailing_whitespace_in_option(void)
 {
         int argc = 3;
         const char *argv[] = {
@@ -102,7 +103,7 @@ void test_validate_input_error_2(void)
         TEST_ASSERT_EQUAL_INT(ERROR, retval);
 }
 
-void test_validate_input_error_3(void)
+void g1_error_no_such_option(void)
 {
         int argc = 3;
         const char *argv[] = {
@@ -117,7 +118,20 @@ void test_validate_input_error_3(void)
         TEST_ASSERT_EQUAL_INT(ERROR, retval);
 }
 
-void test_parse_url_sucess_1(void)
+
+void test_validate_input_g1(void)
+{
+        g1_sucess_valid_option_y();
+        g1_sucess_valid_option_1();
+        g1_sucess_valid_option_0();
+        g1_success_valid_option_n();
+
+        g1_error_no_option_provided();
+        g1_error_trailing_whitespace_in_option();
+        g1_error_no_such_option();
+}
+
+void g2_success_string_ip(void)
 {
         struct UrlInfo ui = {0};
         const char *url = "http://localhost/foo/bar";
@@ -131,7 +145,7 @@ void test_parse_url_sucess_1(void)
         TEST_ASSERT_EQUAL_STRING("foo/bar", ui.path);
 }
 
-void test_parse_url_sucess_2(void)
+void g2_success_numeric_ip(void)
 {
         struct UrlInfo ui = {0};
         const char *url = "http://127.0.0.1/something.txt";
@@ -145,8 +159,7 @@ void test_parse_url_sucess_2(void)
         TEST_ASSERT_EQUAL_STRING("something.txt", ui.path);
 }
 
-/* NO HOST */
-void test_parse_url_error_1(void)
+void g2_error_no_host(void)
 {
         struct UrlInfo ui = {0};
         const char *url = "http:///something.txt";
@@ -157,8 +170,7 @@ void test_parse_url_error_1(void)
         TEST_ASSERT_EQUAL_INT(ERROR, retval);
 }
 
-/* NO PATH */
-void test_parse_url_error_2(void)
+void g2_error_no_path(void)
 {
         struct UrlInfo ui = {0};
         const char *url = "http://127.0.0.1/";
@@ -169,7 +181,17 @@ void test_parse_url_error_2(void)
         TEST_ASSERT_EQUAL_INT(ERROR, retval);
 }
 
-void test_construct_request_message(void)
+
+void test_parse_url_g2(void)
+{
+        g2_success_string_ip();
+        g2_success_numeric_ip();
+
+        g2_error_no_host();
+        g2_error_no_path();
+}
+
+void g3_sucess_1(void)
 {
         const char *uri = "foo/bar/test.txt";
         char req_msg[REQUEST_MESSAGE_MAX_SIZE] = {0};
@@ -182,7 +204,13 @@ void test_construct_request_message(void)
         TEST_ASSERT_EQUAL_STRING(expected, req_msg);
 }
 
-void test_parse_response_message_sucess_init_line_1(void)
+void test_construct_request_message_g3(void)
+{
+        g3_sucess_1();
+}
+
+
+void g4_success_initial_line_one_word_message(void)
 {
         char response[] =
                 "HTTP/1.0 200 OK\n"
@@ -198,7 +226,7 @@ void test_parse_response_message_sucess_init_line_1(void)
         TEST_ASSERT_EQUAL_STRING("OK", hr.status_message);
 }
 
-void test_parse_response_message_sucess_init_line_2(void)
+void g4_success_initial_line_multiple_word_message(void)
 {
         char response[] =
                 "HTTP/1.0 404 Not Found\n"
@@ -214,7 +242,7 @@ void test_parse_response_message_sucess_init_line_2(void)
         TEST_ASSERT_EQUAL_STRING("Not Found", hr.status_message);
 }
 
-void test_parse_response_message_sucess_content_1(void)
+void g4_success_content_no_content(void)
 {
         char response[] =
                 "HTTP/1.0 404 Not Found\n"
@@ -228,7 +256,7 @@ void test_parse_response_message_sucess_content_1(void)
         TEST_ASSERT_EQUAL_STRING("", hr.content);
 }
 
-void test_parse_response_message_sucess_content_2(void)
+void g4_success_content_one_line_content(void)
 {
         char response[] =
                 "HTTP/1.0 404 Not Found\n"
@@ -243,7 +271,7 @@ void test_parse_response_message_sucess_content_2(void)
         TEST_ASSERT_EQUAL_STRING("abcdefghijklmnopqrstuvwxyz1234567890abcdef", hr.content);
 }
 
-void test_parse_response_message_sucess_content_3(void)
+void g4_success_content_multiple_lines_content(void)
 {
     char response[] =
         "HTTP/1.0 200 OK\n"
@@ -277,7 +305,8 @@ void test_parse_response_message_sucess_content_3(void)
     TEST_ASSERT_EQUAL_STRING(expected_content, hr.content);
 }
 
-void test_parse_response_message_error_init_line_1(void)
+
+void g4_error_initial_line_no_http_version(void)
 {
         char response[] =
                 "200 OK\n"
@@ -290,7 +319,7 @@ void test_parse_response_message_error_init_line_1(void)
         TEST_ASSERT_EQUAL_INT(ERROR, retval);
 }
 
-void test_parse_response_message_error_init_line_2(void)
+void g4_error_initial_line_no_status_code(void)
 {
         char response[] =
                 "HTTP/1.0 OK\n"
@@ -304,7 +333,7 @@ void test_parse_response_message_error_init_line_2(void)
 }
 
 
-void test_parse_response_message_error_init_line_3(void)
+void g4_error_initial_line_no_status_message(void)
 {
         char response[] =
                 "HTTP/1.0 200\n"
@@ -317,7 +346,7 @@ void test_parse_response_message_error_init_line_3(void)
         TEST_ASSERT_EQUAL_INT(ERROR, retval);
 }
 
-void test_parse_response_message_error_init_line_4(void)
+void g4_error_initial_line_code_msg_dont_match(void)
 {
         char response[] =
                 "HTTP/1.0 200 Created\n"
@@ -330,7 +359,7 @@ void test_parse_response_message_error_init_line_4(void)
         TEST_ASSERT_EQUAL_INT(ERROR, retval);
 }
 
-void test_parse_response_message_error_blank_line(void)
+void g4_error_blank_linke_no_blank_line(void)
 {
         char response[] =
                 "HTTP/1.0 200 Created\n"
@@ -346,40 +375,30 @@ void test_parse_response_message_error_blank_line(void)
         TEST_ASSERT_EQUAL_INT(ERROR, retval);
 }
 
+void test_parse_response_message_g4(void)
+{
+        g4_success_initial_line_one_word_message();
+        g4_success_initial_line_multiple_word_message();
+        g4_success_content_no_content();
+        g4_success_content_one_line_content();
+        g4_success_content_multiple_lines_content();
+
+        g4_error_initial_line_no_http_version();
+        g4_error_initial_line_no_status_code();
+        g4_error_initial_line_no_status_message();
+        g4_error_initial_line_code_msg_dont_match();
+        g4_error_blank_linke_no_blank_line();
+}
+
+
 int main(void)
 {
         UNITY_BEGIN();
 
-        RUN_TEST(test_validate_input_success_1);
-        RUN_TEST(test_validate_input_sucess_2);
-        RUN_TEST(test_validate_input_sucess_3);
-        RUN_TEST(test_validate_input_sucess_4);
-
-        RUN_TEST(test_validate_input_error_1);
-        RUN_TEST(test_validate_input_error_2);
-        RUN_TEST(test_validate_input_error_3);
-
-        RUN_TEST(test_parse_url_sucess_1);
-        RUN_TEST(test_parse_url_sucess_2);
-
-        RUN_TEST(test_parse_url_error_1);
-        RUN_TEST(test_parse_url_error_2);
-
-        RUN_TEST(test_construct_request_message);
-
-        RUN_TEST(test_parse_response_message_sucess_init_line_1);
-        RUN_TEST(test_parse_response_message_sucess_init_line_2);
-
-        RUN_TEST(test_parse_response_message_sucess_content_1);
-        RUN_TEST(test_parse_response_message_sucess_content_2);
-        RUN_TEST(test_parse_response_message_sucess_content_3);
-
-        RUN_TEST(test_parse_response_message_error_init_line_1);
-        RUN_TEST(test_parse_response_message_error_init_line_2);
-        RUN_TEST(test_parse_response_message_error_init_line_3);
-        RUN_TEST(test_parse_response_message_error_init_line_4);
-
-        RUN_TEST(test_parse_response_message_error_blank_line);
+        RUN_TEST(test_validate_input_g1);
+        RUN_TEST(test_parse_url_g2);
+        RUN_TEST(test_construct_request_message_g3);
+        RUN_TEST(test_parse_response_message_g4);
 
         UNITY_END();
 

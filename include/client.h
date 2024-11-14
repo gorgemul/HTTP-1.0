@@ -48,7 +48,7 @@ struct HttpResponse {
 
     /* headers */
     int headers_count;
-    char *headers[];
+    char **headers;
 };
 
 int validate_input(int argc, const char **argv);
