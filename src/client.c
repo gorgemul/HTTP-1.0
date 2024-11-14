@@ -82,163 +82,152 @@ void construct_request_message(char *req_msg, const char *uri)
         strcat(req_msg, "\r\n");
 }
 
-int get_index(const char *code)
+int is_valid_status_code(const char str_code[])
 {
-        const char *codes[TOTAL_STATUS] = {
-                "200",
-                "201",
-                "202",
-                "204",
+        int code = 0;
 
-                "301",
-                "302",
-                "304",
+        if ((code = atoi(str_code)) == 0) { return 0; }
 
-                "400",
-                "401",
-                "403",
-                "404",
-
-                "500",
-                "501",
-                "502",
-                "503",
-        };
-
-        for (int i = 0; i < TOTAL_STATUS; i++) {
-                if (strcmp(codes[i], code) == 0) { return i; }
+        switch (code) {
+        case OK:
+        case CREATED:
+        case ACCEPTED:
+        case NO_CONTENT:
+        case MOVED_PERMANENTLY:
+        case MOVED_TEMPORARILY:
+        case NOT_MODIFIED:
+        case BAD_REQUEST:
+        case UNAUTHORIZED:
+        case FORBIDDEN:
+        case NOT_FOUND:
+        case INTERNAL_SERVER_ERROR:
+        case NOT_IMPLEMENTED:
+        case BAD_GATEWAY:
+        case SERVICE_UNAVAILABLE:
+                return 1;
+        default:
+                return 0;
         }
-
-        return -1;
 }
 
-/* All valid status code in HTTP/1.0
-    2xx:
-    200 - OK
-    201 - Created
-    202 - Aceepted
-    204 - No Content
-
-    3xx:
-    301 - Moved Permanently
-    302 - Moved Temporarily
-    304 - Not Modified
-
-    4xx:
-    400 - Bad Request
-    401 - Unauthorized
-    403 - Forbidden
-    404 - Not Found
-
-    5xx:
-    500 - Internal Server Error
-    501 - Not Implemented
-    502 - Bad Gateway
-    503 - Service Unavailable
-*/
-int is_valid_status_code(const char *code)
+const char *code_to_msg(int code)
 {
-        if (strlen(code) != 3) { return 0; }
-
-        const char *codes[TOTAL_STATUS] = {
-                "200",
-                "201",
-                "202",
-                "204",
-
-                "301",
-                "302",
-                "304",
-
-                "400",
-                "401",
-                "403",
-                "404",
-
-                "500",
-                "501",
-                "502",
-                "503",
-        };
-
-        for (int i = 0; i < TOTAL_STATUS; i++) {
-                if (strcmp(codes[i], code) == 0) { return 1; }
+        switch (code) {
+        case OK:
+                return "OK";
+        case CREATED:
+                return "Created";
+        case ACCEPTED:
+                return "Accpeted";
+        case NO_CONTENT:
+                return "No Content";
+        case MOVED_PERMANENTLY:
+                return "Moved Permanently";
+        case MOVED_TEMPORARILY:
+                return "Moved Temporarily";
+        case NOT_MODIFIED:
+                return "Not Modified";
+        case BAD_REQUEST:
+                return "Bad Request";
+        case UNAUTHORIZED:
+                return "Unauthorized";
+        case FORBIDDEN:
+                return "Forbidden";
+        case NOT_FOUND:
+                return "Not Found";
+        case INTERNAL_SERVER_ERROR:
+                return "Internal Server Error";
+        case NOT_IMPLEMENTED:
+                return "Not Implemented";
+        case BAD_GATEWAY:
+                return "Bad Gateway";
+        case SERVICE_UNAVAILABLE:
+                return "Service Unavailable";
+        default:
+                return "ERROR";
         }
+}
+
+int is_code_msg_match(const char* str_code, const char *got_msg)
+{
+        int code = atoi(str_code); // Since check before, doesn't do validation here
+
+        return (strcmp(code_to_msg(code), got_msg) == 0) ? 1 : 0;
+}
+
+int scan_http_version(struct HttpResponse *hr, char *from, char *to)
+{
+        char buf[VERSION_MAX_LENGTH] = {0};
+        int str_len = to - from;
+
+        if (str_len >= VERSION_MAX_LENGTH) { return -1; }
+
+        memcpy(buf, from, str_len);
+        buf[str_len] = '\0';
+
+        if (strcmp(buf, "HTTP/1.0") != 0) { return -1; }
+
+        strcpy(hr->http_version, buf);
 
         return 0;
 }
 
-int is_code_msg_match(const char* code, const char *msg)
+int scan_status_code(struct HttpResponse *hr, char *from, char *to)
 {
-        int match_index = -1;
+        char buf[CODE_MAX_LENGTH] = {0};
+        int str_len = to - from;
 
-        const char *msgs[TOTAL_STATUS] = {
-                "OK",
-                "Created",
-                "Aceepted",
-                "No Content",
+        if (str_len >= CODE_MAX_LENGTH) { return -1; }
 
-                "Moved Permanently",
-                "Moved Temporarily",
-                "Not Modified",
+        memcpy(buf, from, str_len);
+        buf[str_len] = '\0';
 
-                "Bad Request",
-                "Unauthorized",
-                "Forbidden",
-                "Not Found",
+        if (!is_valid_status_code(buf)) { return -1; }
 
-                "Internal Server Error",
-                "Not Implemented",
-                "Bad Gateway",
-                "Service Unavailable",
-        };
-        if ((match_index = get_index(code)) == -1) { return 0; }
+        strcpy(hr->status_code, buf);
 
-        return (strcmp(msgs[match_index], msg) == 0) ? 1 : 0;
+        return 0;
 }
 
-int scan_initial_line(struct HttpResponse *hr, char *init_line)
+int scan_status_message(struct HttpResponse *hr, char *from)
+{
+        char buf[MESSAGE_MAX_LENGTH] = {0};
+        int str_len = strlen(from);
+
+        if ((str_len == 0) || (str_len >= MESSAGE_MAX_LENGTH)) { return -1; }
+
+        memcpy(buf, from, str_len);
+        buf[str_len] = '\0';
+
+        if (!is_code_msg_match(hr->status_code, buf)) { return -1; }
+
+        strcpy(hr->status_message, buf);
+
+        return 0;
+}
+
+int scan_initial_line(struct HttpResponse *hr, char *initial_line)
 {
         int counter = 1;
-        int token_length = 0;
-        char version_buf[VERSION_MAX_LENGTH] = {0};
-        char code_buf[CODE_MAX_LENGTH] = {0};
-        char msg_buf[MESSAGE_MAX_LENGTH] = {0};
-        char *from = init_line;
+        char *from = initial_line;
         char *to = NULL;
 
         while (counter <= 3) {
                 switch (counter) {
                 case 1:
-                        if ((to = strchr(init_line, ' ')) == NULL) { return -1; }
-                        token_length = to - from;
-
-                        if (token_length >= VERSION_MAX_LENGTH) { return -1; }
-                        memcpy(version_buf, from, token_length);
-                        version_buf[token_length] = '\0';
-                        if (strcmp(version_buf, "HTTP/1.0") != 0) { return -1; }
+                        if ((to = strchr(initial_line, ' ')) == NULL) { return -1; }
+                        if (scan_http_version(hr, from, to) == -1) { return -1; }
                         from = to + 1;
-                        strcpy(hr->http_version, version_buf);
                         counter++;
                         break;
                 case 2:
                         if ((to = strchr(from, ' ')) == NULL) { return -1; }
-                        token_length = to - from;
-                        if (token_length >= CODE_MAX_LENGTH) { return -1; }
-                        memcpy(code_buf, from, token_length);
-                        code_buf[token_length] = '\0';
-                        if (!is_valid_status_code(code_buf)) { return -1; }
-                        strcpy(hr->status_code, code_buf);
+                        if (scan_status_code(hr, from, to) == -1) { return -1; }
                         from = to + 1;
                         counter++;
                         break;
                 default:
-                        token_length = strlen(from);
-                        if (token_length == 0 || token_length >= MESSAGE_MAX_LENGTH) { return -1; }
-                        memcpy(msg_buf, from, token_length);
-                        msg_buf[token_length] = '\0';
-                        if (!is_code_msg_match(hr->status_code, msg_buf)) { return -1; }
-                        strcpy(hr->status_message, msg_buf);
+                        if (scan_status_message(hr, from) == -1) { return -1; }
                         counter++;
                         break;
                 }
