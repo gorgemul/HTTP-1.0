@@ -1,6 +1,5 @@
 #include "../lib/unity/unity.h"
 #include "../include/client.h"
-#include <stdlib.h>
 
 #define SUCCESS 0
 #define ERROR   -1
@@ -256,13 +255,7 @@ void g4_headers_one_header(void)
         TEST_ASSERT_EQUAL_INT(SUCCESS, retval);
         TEST_ASSERT_EQUAL_INT(1, hr.headers_count);
         TEST_ASSERT_EQUAL_STRING("Date: Fri, 31 Dec 1999 23:59:59 GMT", hr.headers[0]);
-        if (hr.headers_count == 0) { return; }
-
-        for (int i = 0; i < hr.headers_count; i++) {
-                free(hr.headers[i]);
-        }
-
-        free(hr.headers);
+        free_http_response_struct(&hr);
 }
 
 void g4_headers_multiple_headers(void)
@@ -281,13 +274,7 @@ void g4_headers_multiple_headers(void)
         TEST_ASSERT_EQUAL_INT(2, hr.headers_count);
         TEST_ASSERT_EQUAL_STRING("Date: Fri, 31 Dec 1999 23:59:59 GMT", hr.headers[0]);
         TEST_ASSERT_EQUAL_STRING("Content-Type: text/plain", hr.headers[1]);
-        if (hr.headers_count == 0) { return; }
-
-        for (int i = 0; i < hr.headers_count; i++) {
-                free(hr.headers[i]);
-        }
-
-        free(hr.headers);
+        free_http_response_struct(&hr);
 }
 
 void g4_success_content_no_content(void)
@@ -410,7 +397,7 @@ void g4_error_initial_line_code_msg_dont_match(void)
 void g4_error_blank_linke_no_blank_line(void)
 {
         char response[] =
-                "HTTP/1.0 200 Created\n"
+                "HTTP/1.0 200 OK\n"
                 "Date: Fri, 31 Dec 1999 23:59:59 GMT\n"
                 "Content-Type: text/plain\n"
                 "Content-Length: 42\n"

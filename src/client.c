@@ -82,6 +82,18 @@ void construct_request_message(char *req_msg, const char *uri)
         strcat(req_msg, "\r\n");
 }
 
+void free_http_response_struct(struct HttpResponse *hr)
+{
+    if (hr->headers_count == 0) { return; }
+
+    for (int i = 0; i < hr->headers_count; i++) {
+        free(hr->headers[i]);
+    }
+
+    free(hr->headers);
+}
+
+
 /* Helper functions */
 int is_valid_status_code(const char str_code[])
 {
@@ -278,18 +290,6 @@ void scan_multiple_lines_content(char *buf, char *content)
                 line_index += advance_distance;
         } while (advance_distance != -1);
 }
-/* Helper functions */
-
-void free_http_response_struct(struct HttpResponse *hr)
-{
-    if (hr->headers_count == 0) { return; }
-
-    for (int i = 0; i < hr->headers_count; i++) {
-        free(hr->headers[i]);
-    }
-
-    free(hr->headers);
-}
 
 // TODO: Should hanlde the memory allocation error
 int scan_one_line_header(struct HttpResponse *hr, char line[])
@@ -297,11 +297,7 @@ int scan_one_line_header(struct HttpResponse *hr, char line[])
         char *from = line;
         char *to = strchr(line, ':');
 
-        int is_no_colon = (to == NULL);
-        int is_no_key = (to == from);
-        int is_no_val = (*(to + 1) == '\0');
-
-        if (is_no_colon || is_no_key || is_no_val) { return -1; }
+        if (to == NULL || to == from || *(to+1) == '\0') { return -1; }
 
         int key_len = to - from;
         char *key_buf = malloc(sizeof(char) * (key_len+1));
@@ -339,42 +335,32 @@ int scan_one_line_header(struct HttpResponse *hr, char line[])
 
         return 0;
 }
+/* Helper functions */
 
 int parse_response_message(struct HttpResponse *hr, char *res)
 {
-        int is_first_line = 1;
-        int has_ignore_blank_line = 0;
+        int has_header = 1;
 
         char *token = strtok(res, "\n");
+        if (scan_initial_line(hr, token) == -1) { return -1; }
+        token = strtok(NULL, "\n");
 
-        do {
-                if (is_first_line) {
-                        if (scan_initial_line(hr, res) == -1) { return -1; }
-                        is_first_line = 0;
-                        token = strtok(NULL, "\n");
-                        continue;
-                }
-
-                // TODO: Need to handle free
+        while (has_header) {
                 if (token[0] == '\r') {
-                        has_ignore_blank_line = 1;
+                        has_header = 0;
                         token = strtok(NULL, "\0");
                         continue;
                 }
 
-                if (!has_ignore_blank_line) {
-                        if (scan_one_line_header(hr, token) == -1) {
-                                free_http_response_struct(hr);
-                                return -1;
-                        }
-                        token = strtok(NULL, "\n");
-                        continue;
+                if (scan_one_line_header(hr, token) == -1) {
+                        free_http_response_struct(hr);
+                        return -1;
                 }
 
-                scan_multiple_lines_content(hr->content, token);
-                token = strtok(NULL, "\0");
+                token = strtok(NULL, "\n");
+        }
 
-        } while (token != NULL);
+        if (token) { scan_multiple_lines_content(hr->content, token); }
 
         return 0;
 }

@@ -44,9 +44,8 @@ struct HttpResponse {
     char http_version[VERSION_MAX_LENGTH];
     char status_code[CODE_MAX_LENGTH];
     char status_message[MESSAGE_MAX_LENGTH];
-
+    /* content */
     char content[CONTENT_MAX_SIZE];
-
     /* headers */
     int headers_count;
     char **headers;
@@ -59,5 +58,7 @@ int parse_response_message(struct HttpResponse *hr, char *res);
 
 /* Not test beacuse it needs the server running */
 int connect_http_server(const char *host);
+/* Just don't know a good way to test a clean function, not test rn */
+void free_http_response_struct(struct HttpResponse *hr);
 
 #endif
