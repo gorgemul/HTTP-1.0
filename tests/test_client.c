@@ -1,5 +1,6 @@
 #include "../lib/unity/unity.h"
 #include "../include/client.h"
+#include <stdlib.h>
 
 #define SUCCESS 0
 #define ERROR   -1
@@ -11,7 +12,6 @@ void setUp(void)
 void tearDown(void)
 {
 }
-
 
 void g1_sucess_valid_option_y(void)
 {
@@ -242,6 +242,54 @@ void g4_success_initial_line_multiple_word_message(void)
         TEST_ASSERT_EQUAL_STRING("Not Found", hr.status_message);
 }
 
+void g4_headers_one_header(void)
+{
+        char response[] =
+                "HTTP/1.0 404 Not Found\n"
+                "Date: Fri, 31 Dec 1999 23:59:59 GMT\n"
+                "\r\n";
+
+        struct HttpResponse hr = {0};
+
+        int retval = parse_response_message(&hr, response);
+
+        TEST_ASSERT_EQUAL_INT(SUCCESS, retval);
+        TEST_ASSERT_EQUAL_INT(1, hr.headers_count);
+        TEST_ASSERT_EQUAL_STRING("Date: Fri, 31 Dec 1999 23:59:59 GMT", hr.headers[0]);
+        if (hr.headers_count == 0) { return; }
+
+        for (int i = 0; i < hr.headers_count; i++) {
+                free(hr.headers[i]);
+        }
+
+        free(hr.headers);
+}
+
+void g4_headers_multiple_headers(void)
+{
+        char response[] =
+                "HTTP/1.0 404 Not Found\n"
+                "Date: Fri, 31 Dec 1999 23:59:59 GMT\n"
+                "Content-Type: text/plain\n"
+                "\r\n";
+
+        struct HttpResponse hr = {0};
+
+        int retval = parse_response_message(&hr, response);
+
+        TEST_ASSERT_EQUAL_INT(SUCCESS, retval);
+        TEST_ASSERT_EQUAL_INT(2, hr.headers_count);
+        TEST_ASSERT_EQUAL_STRING("Date: Fri, 31 Dec 1999 23:59:59 GMT", hr.headers[0]);
+        TEST_ASSERT_EQUAL_STRING("Content-Type: text/plain", hr.headers[1]);
+        if (hr.headers_count == 0) { return; }
+
+        for (int i = 0; i < hr.headers_count; i++) {
+                free(hr.headers[i]);
+        }
+
+        free(hr.headers);
+}
+
 void g4_success_content_no_content(void)
 {
         char response[] =
@@ -382,6 +430,8 @@ void test_parse_response_message_g4(void)
         g4_success_content_no_content();
         g4_success_content_one_line_content();
         g4_success_content_multiple_lines_content();
+        g4_headers_one_header();
+        g4_headers_multiple_headers();
 
         g4_error_initial_line_no_http_version();
         g4_error_initial_line_no_status_code();
