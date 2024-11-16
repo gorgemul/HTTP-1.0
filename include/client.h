@@ -1,11 +1,13 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
+#define HOST_MAX_SIZE 32
+#define PATH_MAX_SIZE 64
 #define REQUEST_MESSAGE_MAX_SIZE 2048
 #define RECV_MESSAGE_MAX_SIZE 204800
 #define CONTENT_MAX_SIZE 8192
 #define HEADER_MAX_SIZE 8192
-#define TOTAL_STATUS 15
+#define TOTAL_HEADER 16
 #define VERSION_MAX_LENGTH 9
 #define CODE_MAX_LENGTH 4
 #define MESSAGE_MAX_LENGTH 30
@@ -31,12 +33,11 @@ enum EResponseStatus {
     BAD_GATEWAY = 502,
     SERVICE_UNAVAILABLE = 503,
 
-    TOTAL_RSE_STATUS = 15,
 };
 
 struct UrlInfo {
-	char host[32];
-	char path[64];
+	char host[HOST_MAX_SIZE];
+	char path[PATH_MAX_SIZE];
 };
 
 struct HttpResponse {

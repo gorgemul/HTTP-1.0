@@ -241,7 +241,7 @@ void g4_success_initial_line_multiple_word_message(void)
         TEST_ASSERT_EQUAL_STRING("Not Found", hr.status_message);
 }
 
-void g4_headers_one_header(void)
+void g4_success_headers_one_header(void)
 {
         char response[] =
                 "HTTP/1.0 404 Not Found\n"
@@ -258,7 +258,7 @@ void g4_headers_one_header(void)
         free_http_response_struct(&hr);
 }
 
-void g4_headers_multiple_headers(void)
+void g4_success_headers_multiple_headers(void)
 {
         char response[] =
                 "HTTP/1.0 404 Not Found\n"
@@ -274,6 +274,60 @@ void g4_headers_multiple_headers(void)
         TEST_ASSERT_EQUAL_INT(2, hr.headers_count);
         TEST_ASSERT_EQUAL_STRING("Date: Fri, 31 Dec 1999 23:59:59 GMT", hr.headers[0]);
         TEST_ASSERT_EQUAL_STRING("Content-Type: text/plain", hr.headers[1]);
+        free_http_response_struct(&hr);
+}
+
+void g4_success_headers_different_cases(void)
+{
+        char response[] =
+                "HTTP/1.0 404 Not Found\n"
+                "dAtE: Fri, 31 Dec 1999 23:59:59 GMT\n"
+                "cOnTENT-tyPe: text/plain\n"
+                "\r\n";
+
+        struct HttpResponse hr = {0};
+
+        int retval = parse_response_message(&hr, response);
+
+        TEST_ASSERT_EQUAL_INT(SUCCESS, retval);
+        TEST_ASSERT_EQUAL_INT(2, hr.headers_count);
+        TEST_ASSERT_EQUAL_STRING("Date: Fri, 31 Dec 1999 23:59:59 GMT", hr.headers[0]);
+        TEST_ASSERT_EQUAL_STRING("Content-Type: text/plain", hr.headers[1]);
+        free_http_response_struct(&hr);
+}
+
+void g4_success_headers_no_whitespace_after_colon_sign(void)
+{
+        char response[] =
+                "HTTP/1.0 404 Not Found\n"
+                "Date:Fri, 31 Dec 1999 23:59:59 GMT\n"
+                "\r\n";
+
+        struct HttpResponse hr = {0};
+
+        int retval = parse_response_message(&hr, response);
+
+        TEST_ASSERT_EQUAL_INT(SUCCESS, retval);
+        TEST_ASSERT_EQUAL_INT(1, hr.headers_count);
+        TEST_ASSERT_EQUAL_STRING("Date: Fri, 31 Dec 1999 23:59:59 GMT", hr.headers[0]);
+
+        free_http_response_struct(&hr);
+}
+
+void g4_success_headers_multiple_whitespaces_after_colon_sign(void)
+{
+        char response[] =
+                "HTTP/1.0 404 Not Found\n"
+                "Date:\t Fri, 31 Dec 1999 23:59:59 GMT\n"
+                "\r\n";
+
+        struct HttpResponse hr = {0};
+
+        int retval = parse_response_message(&hr, response);
+
+        TEST_ASSERT_EQUAL_INT(SUCCESS, retval);
+        TEST_ASSERT_EQUAL_INT(1, hr.headers_count);
+        TEST_ASSERT_EQUAL_STRING("Date: Fri, 31 Dec 1999 23:59:59 GMT", hr.headers[0]);
         free_http_response_struct(&hr);
 }
 
@@ -308,38 +362,83 @@ void g4_success_content_one_line_content(void)
 
 void g4_success_content_multiple_lines_content(void)
 {
-    char response[] =
-        "HTTP/1.0 200 OK\n"
-        "\r\n"
-        "<!DOCTYPE html>\n"
-        "<html>\n"
-        "<body>\n"
-        "\n"
-        "<h1>My First Heading</h1>\n"
-        "<p>My first paragraph.</p>\n"
-        "\n"
-        "</body>\n"
-        "</html>";
+        char response[] =
+                "HTTP/1.0 200 OK\n"
+                "\r\n"
+                "<!DOCTYPE html>\n"
+                "<html>\n"
+                "<body>\n"
+                "\n"
+                "<h1>My First Heading</h1>\n"
+                "<p>My first paragraph.</p>\n"
+                "\n"
+                "</body>\n"
+                "</html>";
 
-    struct HttpResponse hr = {0};
+        struct HttpResponse hr = {0};
 
-    const char *expected_content =
-        "<!DOCTYPE html>\n"
-        "<html>\n"
-        "<body>\n"
-        "\n"
-        "<h1>My First Heading</h1>\n"
-        "<p>My first paragraph.</p>\n"
-        "\n"
-        "</body>\n"
-        "</html>";
+        const char *expected_content =
+                "<!DOCTYPE html>\n"
+                "<html>\n"
+                "<body>\n"
+                "\n"
+                "<h1>My First Heading</h1>\n"
+                "<p>My first paragraph.</p>\n"
+                "\n"
+                "</body>\n"
+                "</html>";
 
-    int retval = parse_response_message(&hr, response);
+        int retval = parse_response_message(&hr, response);
 
-    TEST_ASSERT_EQUAL_INT(SUCCESS, retval);
-    TEST_ASSERT_EQUAL_STRING(expected_content, hr.content);
+        TEST_ASSERT_EQUAL_INT(SUCCESS, retval);
+        TEST_ASSERT_EQUAL_STRING(expected_content, hr.content);
 }
 
+void g4_success_whole_response(void)
+{
+        char response[] =
+                "HTTP/1.0 200 OK\n"
+                "Date: Fri, 31 Dec 1999 23:59:59 GMT\n"
+                "Content-Type: text/html\n"
+                "Content-Length: 100\n"
+                "\r\n"
+                "<!DOCTYPE html>\n"
+                "<html>\n"
+                "<body>\n"
+                "\n"
+                "<h1>My First Heading</h1>\n"
+                "<p>My first paragraph.</p>\n"
+                "\n"
+                "</body>\n"
+                "</html>";
+
+        struct HttpResponse hr = {0};
+
+        const char *expected_content =
+                "<!DOCTYPE html>\n"
+                "<html>\n"
+                "<body>\n"
+                "\n"
+                "<h1>My First Heading</h1>\n"
+                "<p>My first paragraph.</p>\n"
+                "\n"
+                "</body>\n"
+                "</html>";
+
+        int retval = parse_response_message(&hr, response);
+
+        TEST_ASSERT_EQUAL_INT(SUCCESS, retval);
+        TEST_ASSERT_EQUAL_STRING("HTTP/1.0", hr.http_version);
+        TEST_ASSERT_EQUAL_STRING("200", hr.status_code);
+        TEST_ASSERT_EQUAL_STRING("OK", hr.status_message);
+        TEST_ASSERT_EQUAL_INT(3, hr.headers_count);
+        TEST_ASSERT_EQUAL_STRING("Date: Fri, 31 Dec 1999 23:59:59 GMT", hr.headers[0]);
+        TEST_ASSERT_EQUAL_STRING("Content-Type: text/html", hr.headers[1]);
+        TEST_ASSERT_EQUAL_STRING("Content-Length: 100", hr.headers[2]);
+        TEST_ASSERT_EQUAL_STRING(expected_content, hr.content);
+
+        free_http_response_struct(&hr);
+}
 
 void g4_error_initial_line_no_http_version(void)
 {
@@ -394,6 +493,78 @@ void g4_error_initial_line_code_msg_dont_match(void)
         TEST_ASSERT_EQUAL_INT(ERROR, retval);
 }
 
+void g4_error_headers_missing_key(void)
+{
+        char response[] =
+                "HTTP/1.0 404 Not Found\n"
+                ":Fri, 31 Dec 1999 23:59:59 GMT\n"
+                "\r\n";
+
+        struct HttpResponse hr = {0};
+
+        int retval = parse_response_message(&hr, response);
+
+        TEST_ASSERT_EQUAL_INT(ERROR, retval);
+}
+
+void g4_error_headers_missing_value(void)
+{
+        char response[] =
+                "HTTP/1.0 404 Not Found\n"
+                "Date:\n"
+                "\r\n";
+
+        struct HttpResponse hr = {0};
+
+        int retval = parse_response_message(&hr, response);
+
+        TEST_ASSERT_EQUAL_INT(ERROR, retval);
+}
+
+void g4_error_headers_no_such_header(void)
+{
+        char response[] =
+                "HTTP/1.0 404 Not Found\n"
+                "Host: example.org\n" // HTTP/1.1 header
+                "\r\n";
+
+        struct HttpResponse hr = {0};
+
+        int retval = parse_response_message(&hr, response);
+
+        TEST_ASSERT_EQUAL_INT(ERROR, retval);
+
+}
+
+void g4_error_headers_preceiding_whitespace(void)
+{
+        char response[] =
+                "HTTP/1.0 404 Not Found\n"
+                "  Date: Fri, 31 Dec 1999 23:59:59 GMT\n"
+                "\r\n";
+
+        struct HttpResponse hr = {0};
+
+        int retval = parse_response_message(&hr, response);
+
+        TEST_ASSERT_EQUAL_INT(ERROR, retval);
+}
+
+void g4_error_headers_trailing_whitespace(void)
+{
+        char response[] =
+                "HTTP/1.0 404 Not Found\n"
+                "Date: Fri, 31 Dec 1999 23:59:59 GMT     \n"
+                "\r\n";
+
+        struct HttpResponse hr = {0};
+
+        int retval = parse_response_message(&hr, response);
+
+        TEST_ASSERT_EQUAL_INT(ERROR, retval);
+}
+
+
 void g4_error_blank_linke_no_blank_line(void)
 {
         char response[] =
@@ -414,16 +585,26 @@ void test_parse_response_message_g4(void)
 {
         g4_success_initial_line_one_word_message();
         g4_success_initial_line_multiple_word_message();
+        g4_success_headers_one_header();
+        g4_success_headers_multiple_headers();
+        g4_success_headers_different_cases();
+        g4_success_headers_no_whitespace_after_colon_sign();
+        g4_success_headers_multiple_whitespaces_after_colon_sign();
         g4_success_content_no_content();
         g4_success_content_one_line_content();
         g4_success_content_multiple_lines_content();
-        g4_headers_one_header();
-        g4_headers_multiple_headers();
+
+        g4_success_whole_response();
 
         g4_error_initial_line_no_http_version();
         g4_error_initial_line_no_status_code();
         g4_error_initial_line_no_status_message();
         g4_error_initial_line_code_msg_dont_match();
+        g4_error_headers_missing_key();
+        g4_error_headers_missing_value();
+        g4_error_headers_no_such_header();
+        g4_error_headers_preceiding_whitespace();
+        g4_error_headers_trailing_whitespace();
         g4_error_blank_linke_no_blank_line();
 }
 

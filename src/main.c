@@ -44,16 +44,16 @@ int main(int argc, const char **argv)
         printf("Waiting for server response...\n");
 
         switch (recv_bytes = recv(socket_fd, res_buf, RECV_MESSAGE_MAX_SIZE-1, 0)) {
-                case -1:
-                        close(socket_fd);
-                        fprintf(stderr, "ERROR: recv");
-                        exit(1);
-                case 0:
-                        close(socket_fd);
-                        fprintf(stderr, "ERROR: Server close connection before responsing");
-                        exit(1);
-                default:
-                        return 1; // TODO: Parse response buffer
+        case -1:
+                close(socket_fd);
+                fprintf(stderr, "ERROR: recv");
+                exit(1);
+        case 0:
+                close(socket_fd);
+                fprintf(stderr, "ERROR: Server close connection before responsing");
+                exit(1);
+        default:
+                return 1; // TODO: Parse response buffer
         }
 
         return 0;
