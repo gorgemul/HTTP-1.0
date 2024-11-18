@@ -5,28 +5,51 @@
 #include <unistd.h>
 #include <string.h>
 
+char *get_file_name(char path[])
+{
+        char *from = path;
+        char *to = strchr(path, '/');
+
+        while (to != NULL) {
+                from = to + 1;
+
+                to = strchr(from, '/');
+        }
+
+        return from;
+}
+
+void save_file(char name[], char content[])
+{
+        FILE *file = fopen(name, "w");
+        fputs(content, file);
+        fclose(file);
+}
+
 int main(int argc, const char **argv)
 {
         int is_saved = 0;
         int socket_fd = -1;
         int recv_bytes = 0;
+        int success = 0;
         char req_buf[REQUEST_MESSAGE_MAX_SIZE] = {0};
         char res_buf[RECV_MESSAGE_MAX_SIZE] = {0};
         struct UrlInfo ui = {0};
+        struct HttpResponse hr = {0};
 
         if ((is_saved = validate_input(argc, argv)) == -1) {
                 fprintf(stderr, "USAGE: <program> <url> <'y'|'1'|'n'|'0'>");
-                exit(1);
+                goto ret;
         }
 
         if (parse_url(argv[1], &ui) == -1) {
                 fprintf(stderr, "ERROR: Invalid url");
-                exit(1);
+                goto ret;
         }
 
         if ((socket_fd = connect_http_server(ui.host)) == -1) {
                 fprintf(stderr, "ERROR: connect_http_server");
-                exit(1);
+                goto ret;
         }
 
         printf("Sucessfully connect to server: %s:80\n", ui.host);
@@ -36,25 +59,48 @@ int main(int argc, const char **argv)
         printf("Requesting resouces on /%s...\n", ui.path);
 
         if (send(socket_fd, req_buf, strlen(req_buf), 0) == -1) {
-                close(socket_fd);
                 fprintf(stderr, "ERROR: send");
-                exit(1);
+                goto clean;
         }
 
         printf("Waiting for server response...\n");
 
         switch (recv_bytes = recv(socket_fd, res_buf, RECV_MESSAGE_MAX_SIZE-1, 0)) {
         case -1:
-                close(socket_fd);
                 fprintf(stderr, "ERROR: recv");
-                exit(1);
+                goto clean;
         case 0:
-                close(socket_fd);
                 fprintf(stderr, "ERROR: Server close connection before responsing");
-                exit(1);
+                goto clean;
         default:
-                return 1; // TODO: Parse response buffer
+                if (parse_response_message(&hr, res_buf) == -1) {
+                        fprintf(stderr, "ERROR: parse_response_message");
+                        goto clean;
+                }
+
+                success = 1;
+
+                if (strcmp(hr.status_code, "200") != 0) {
+                        printf("REQUEST FAIL: %s %s\n", hr.status_code, hr.status_message);
+                        goto clean;
+                }
+
+                if (is_saved) {
+                        char *file_name = get_file_name(ui.path);
+                        save_file(file_name, hr.content);
+                        printf("successfully saved file: %s\n", file_name);
+                } else {
+                        printf("Receving content====>\n");
+                        printf("%s\n", hr.content);
+                }
         }
 
-        return 0;
+
+clean:
+        free_http_response_struct(&hr);
+        close(socket_fd);
+        printf("Cleaning allocating memory...\n");
+        printf("Closing connection...\n");
+ret:
+        return success ? 0 : 1;
 }

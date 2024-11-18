@@ -117,19 +117,6 @@ void g1_error_no_such_option(void)
         TEST_ASSERT_EQUAL_INT(ERROR, retval);
 }
 
-
-void test_validate_input_g1(void)
-{
-        g1_sucess_valid_option_y();
-        g1_sucess_valid_option_1();
-        g1_sucess_valid_option_0();
-        g1_success_valid_option_n();
-
-        g1_error_no_option_provided();
-        g1_error_trailing_whitespace_in_option();
-        g1_error_no_such_option();
-}
-
 void g2_success_string_ip(void)
 {
         struct UrlInfo ui = {0};
@@ -180,16 +167,6 @@ void g2_error_no_path(void)
         TEST_ASSERT_EQUAL_INT(ERROR, retval);
 }
 
-
-void test_parse_url_g2(void)
-{
-        g2_success_string_ip();
-        g2_success_numeric_ip();
-
-        g2_error_no_host();
-        g2_error_no_path();
-}
-
 void g3_sucess_1(void)
 {
         const char *uri = "foo/bar/test.txt";
@@ -202,12 +179,6 @@ void g3_sucess_1(void)
         construct_request_message(req_msg, uri);
         TEST_ASSERT_EQUAL_STRING(expected, req_msg);
 }
-
-void test_construct_request_message_g3(void)
-{
-        g3_sucess_1();
-}
-
 
 void g4_success_initial_line_one_word_message(void)
 {
@@ -581,6 +552,32 @@ void g4_error_blank_linke_no_blank_line(void)
         TEST_ASSERT_EQUAL_INT(ERROR, retval);
 }
 
+void test_validate_input_g1(void)
+{
+        g1_sucess_valid_option_y();
+        g1_sucess_valid_option_1();
+        g1_sucess_valid_option_0();
+        g1_success_valid_option_n();
+
+        g1_error_no_option_provided();
+        g1_error_trailing_whitespace_in_option();
+        g1_error_no_such_option();
+}
+
+void test_parse_url_g2(void)
+{
+        g2_success_string_ip();
+        g2_success_numeric_ip();
+
+        g2_error_no_host();
+        g2_error_no_path();
+}
+
+void test_construct_request_message_g3(void)
+{
+        g3_sucess_1();
+}
+
 void test_parse_response_message_g4(void)
 {
         g4_success_initial_line_one_word_message();
@@ -607,7 +604,6 @@ void test_parse_response_message_g4(void)
         g4_error_headers_trailing_whitespace();
         g4_error_blank_linke_no_blank_line();
 }
-
 
 int main(void)
 {
